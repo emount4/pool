@@ -1,0 +1,38 @@
+# Maven
+target/
+*.class
+
+# Build outputs
+out/
+build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated exports
+exports/*.xlsx
+exports/*.xls
+
+# Local environment overrides
+*.local.properties
+application-local.properties
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
