@@ -24,6 +24,4 @@ public interface ClientRepository {
     List<Client> findByLastName(String lastName);
 
     boolean existsById(long id);
-
-    boolean hasVisits(long clientId);
 }

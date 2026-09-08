@@ -26,4 +26,8 @@ public interface VisitRepository {
     List<Visit> findByStatus(VisitStatus status);
 
     List<Visit> findByDateRange(LocalDate from, LocalDate to);
+
+    List<Visit> findByClientIdAndDate(long clientId, LocalDate date);
+
+    boolean existsByClientId(long clientId);
 }

@@ -1,5 +1,24 @@
 DROP TABLE IF EXISTS visits;
 DROP TABLE IF EXISTS clients;
+DROP TABLE IF EXISTS system_users;
+
+CREATE TABLE system_users (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_user_username
+        CHECK (
+            username = trim(username)
+            AND length(username) BETWEEN 3 AND 50
+        ),
+
+    CONSTRAINT chk_user_role
+        CHECK (role IN ('ADMIN', 'OPERATOR'))
+);
 
 CREATE TABLE clients (
     id BIGSERIAL PRIMARY KEY,
@@ -33,10 +52,15 @@ CREATE TABLE visits (
     duration_minutes INT NOT NULL,
     lane_number INT NOT NULL,
     status VARCHAR(30) NOT NULL,
+    created_by BIGINT,
 
     CONSTRAINT fk_visit_client
         FOREIGN KEY (client_id)
         REFERENCES clients(id),
+
+    CONSTRAINT fk_visit_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES system_users(id),
 
     CONSTRAINT chk_duration
         CHECK (duration_minutes BETWEEN 30 AND 180),
@@ -58,3 +82,4 @@ CREATE TABLE visits (
 CREATE INDEX idx_visits_client_id ON visits(client_id);
 CREATE INDEX idx_visits_visit_date ON visits(visit_date);
 CREATE INDEX idx_visits_status ON visits(status);
+CREATE INDEX idx_visits_created_by ON visits(created_by);
