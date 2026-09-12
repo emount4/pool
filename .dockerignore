@@ -1,0 +1,12 @@
+.git
+.gitignore
+.idea
+.vscode
+target
+out
+build
+exports
+*.iml
+*.log
+*.tmp
+*.bak

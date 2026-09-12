@@ -22,9 +22,9 @@ public final class DatabaseManager {
     }
 
     public DatabaseManager(Properties properties) {
-        this.url = requiredProperty(properties, "db.url");
-        this.username = requiredProperty(properties, "db.username");
-        this.password = requiredProperty(properties, "db.password");
+        this.url = requiredValue(properties, "db.url", "DB_URL");
+        this.username = requiredValue(properties, "db.username", "DB_USERNAME");
+        this.password = requiredValue(properties, "db.password", "DB_PASSWORD");
     }
 
     public Connection getConnection() {
@@ -52,11 +52,16 @@ public final class DatabaseManager {
         }
     }
 
-    private static String requiredProperty(Properties properties, String key) {
-        String value = properties.getProperty(key);
+    private static String requiredValue(Properties properties, String key, String environmentKey) {
+        String environmentValue = System.getenv(environmentKey);
+        String value = environmentValue == null || environmentValue.isBlank()
+                ? properties.getProperty(key)
+                : environmentValue;
         if (value == null || value.isBlank()) {
-            throw new DatabaseException("Не задано обязательное свойство: " + key);
+            throw new DatabaseException(
+                    "Не задан параметр " + key + " или переменная " + environmentKey + "."
+            );
         }
-        return value.trim();
+        return "db.password".equals(key) ? value : value.trim();
     }
 }
