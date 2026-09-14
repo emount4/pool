@@ -42,6 +42,8 @@ public final class AdminMenu {
                     case 0 -> running = false;
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
+            } catch (OperationCancelledException exception) {
+                System.out.println(exception.getMessage());
             } catch (RuntimeException exception) {
                 errorHandler.handle(exception);
             }
@@ -66,8 +68,9 @@ public final class AdminMenu {
     }
 
     private void createUser(UserSession session) {
-        String username = inputReader.readNonEmptyString("Username: ");
-        char[] password = inputReader.readPassword("Пароль: ");
+        printFormHeader("СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ");
+        String username = inputReader.readCancellableNonEmptyString("Username: ");
+        char[] password = inputReader.readCancellablePassword("Пароль: ");
         try {
             UserRole role = inputReader.readRole("Роль (1/ADMIN, 2/OPERATOR): ");
             SystemUser user = userManagementService.createUser(session, username, password, role);
@@ -78,27 +81,38 @@ public final class AdminMenu {
     }
 
     private void findUser(UserSession session) {
-        long id = inputReader.readLong("ID пользователя: ");
+        printFormHeader("ПОИСК ПОЛЬЗОВАТЕЛЯ");
+        long id = inputReader.readCancellableLong("ID пользователя: ");
         printUsers(List.of(userManagementService.getUserById(session, id)));
     }
 
     private void changeUsername(UserSession session) {
-        long id = inputReader.readLong("ID пользователя: ");
-        String username = inputReader.readNonEmptyString("Новый username: ");
+        printFormHeader("ИЗМЕНЕНИЕ USERNAME");
+        long id = inputReader.readCancellableLong("ID пользователя: ");
+        SystemUser user = userManagementService.getUserById(session, id);
+        String username = inputReader.readNonEmptyStringWithDefault(
+                "Username [" + user.getUsername() + "]: ", user.getUsername()
+        );
         userManagementService.changeUsername(session, id, username);
         System.out.println("Username изменён.");
     }
 
     private void changeRole(UserSession session) {
-        long id = inputReader.readLong("ID пользователя: ");
-        UserRole role = inputReader.readRole("Новая роль (1/ADMIN, 2/OPERATOR): ");
+        printFormHeader("ИЗМЕНЕНИЕ РОЛИ");
+        long id = inputReader.readCancellableLong("ID пользователя: ");
+        SystemUser user = userManagementService.getUserById(session, id);
+        UserRole role = inputReader.readRoleWithDefault(
+                "Роль [" + user.getRole() + "] (1/ADMIN, 2/OPERATOR): ",
+                user.getRole()
+        );
         userManagementService.changeRole(session, id, role);
         System.out.println("Роль изменена.");
     }
 
     private void changePassword(UserSession session) {
-        long id = inputReader.readLong("ID пользователя: ");
-        char[] password = inputReader.readPassword("Новый пароль: ");
+        printFormHeader("ИЗМЕНЕНИЕ ПАРОЛЯ");
+        long id = inputReader.readCancellableLong("ID пользователя: ");
+        char[] password = inputReader.readCancellablePassword("Новый пароль: ");
         try {
             userManagementService.changePassword(session, id, password);
             System.out.println("Пароль изменён.");
@@ -108,19 +122,34 @@ public final class AdminMenu {
     }
 
     private void deactivateUser(UserSession session) {
-        long id = inputReader.readLong("ID пользователя: ");
+        printFormHeader("БЛОКИРОВКА ПОЛЬЗОВАТЕЛЯ");
+        long id = inputReader.readCancellableLong("ID пользователя: ");
+        SystemUser user = userManagementService.getUserById(session, id);
+        if (!inputReader.readConfirmation(
+                "Заблокировать пользователя " + user.getUsername() + "? (да/нет): ", false
+        )) {
+            System.out.println("Блокировка отменена.");
+            return;
+        }
         userManagementService.deactivateUser(session, id);
         System.out.println("Пользователь заблокирован.");
     }
 
     private void activateUser(UserSession session) {
-        long id = inputReader.readLong("ID пользователя: ");
+        printFormHeader("РАЗБЛОКИРОВКА ПОЛЬЗОВАТЕЛЯ");
+        long id = inputReader.readCancellableLong("ID пользователя: ");
         userManagementService.activateUser(session, id);
         System.out.println("Пользователь разблокирован.");
     }
 
     private String value(Object value) {
         return value == null ? "-" : value.toString();
+    }
+
+    private void printFormHeader(String title) {
+        System.out.println();
+        System.out.println("---------- " + title + " ----------");
+        System.out.println("Для отмены введите 0 или «назад» на любом шаге.");
     }
 
     private void printMenu() {

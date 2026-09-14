@@ -70,7 +70,12 @@ public class Main {
                 errorHandler
         );
         ClientMenu clientMenu = new ClientMenu(inputReader, clientService, errorHandler);
-        VisitMenu visitMenu = new VisitMenu(inputReader, visitService, errorHandler);
+        VisitMenu visitMenu = new VisitMenu(
+                inputReader,
+                clientService,
+                visitService,
+                errorHandler
+        );
         AdminMenu adminMenu = new AdminMenu(
                 inputReader,
                 userManagementService,

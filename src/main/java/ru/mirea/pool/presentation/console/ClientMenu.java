@@ -37,6 +37,8 @@ public final class ClientMenu {
                     case 0 -> running = false;
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
+            } catch (OperationCancelledException exception) {
+                System.out.println(exception.getMessage());
             } catch (RuntimeException exception) {
                 errorHandler.handle(exception);
             }
@@ -49,9 +51,9 @@ public final class ClientMenu {
             return;
         }
 
-        System.out.printf("%-5s %-16s %-18s %-18s %-30s %-12s%n",
+        System.out.printf("%-4s %-11s %-13s %-15s %-20s %-10s%n",
                 "ID", "Имя", "Фамилия", "Телефон", "Email", "Дата рождения");
-        System.out.println("-".repeat(105));
+        System.out.println("-".repeat(78));
         clients.forEach(this::printClientRow);
     }
 
@@ -60,11 +62,14 @@ public final class ClientMenu {
     }
 
     private void createClient() {
-        String firstName = inputReader.readNonEmptyString("Имя: ");
-        String lastName = inputReader.readNonEmptyString("Фамилия: ");
-        String phone = inputReader.readNonEmptyString("Телефон: ");
-        String email = inputReader.readString("Email (можно оставить пустым): ");
-        LocalDate birthDate = inputReader.readDate("Дата рождения");
+        printFormHeader("ДОБАВЛЕНИЕ КЛИЕНТА");
+        String firstName = inputReader.readCancellableNonEmptyString("Имя: ");
+        String lastName = inputReader.readCancellableNonEmptyString("Фамилия: ");
+        String phone = inputReader.readCancellableNonEmptyString("Телефон: ");
+        String email = inputReader.readCancellableString(
+                "Email (можно оставить пустым): "
+        );
+        LocalDate birthDate = inputReader.readCancellableDate("Дата рождения");
 
         Client client = clientService.createClient(
                 firstName,
@@ -73,48 +78,93 @@ public final class ClientMenu {
                 email,
                 birthDate
         );
-        System.out.println("Клиент создан, ID: " + client.getId());
+        System.out.printf("Клиент №%d создан: %s %s, %s.%n",
+                client.getId(), client.getFirstName(), client.getLastName(), client.getPhone());
     }
 
     private void findClient() {
-        long id = inputReader.readLong("ID клиента: ");
+        printFormHeader("ПОИСК КЛИЕНТА");
+        long id = inputReader.readCancellableLong("ID клиента: ");
         printClient(clientService.getClientById(id));
     }
 
     private void updateClient() {
-        long id = inputReader.readLong("ID клиента: ");
+        printFormHeader("РЕДАКТИРОВАНИЕ КЛИЕНТА");
+        long id = inputReader.readCancellableLong("ID клиента: ");
         Client current = clientService.getClientById(id);
         System.out.println("Текущие данные:");
         printClient(current);
+        System.out.println("Нажмите Enter, чтобы оставить текущее значение.");
 
-        String firstName = inputReader.readNonEmptyString("Новое имя: ");
-        String lastName = inputReader.readNonEmptyString("Новая фамилия: ");
-        String phone = inputReader.readNonEmptyString("Новый телефон: ");
-        String email = inputReader.readString("Новый email (можно оставить пустым): ");
-        LocalDate birthDate = inputReader.readDate("Новая дата рождения");
+        String firstName = inputReader.readNonEmptyStringWithDefault(
+                "Имя [" + current.getFirstName() + "]: ", current.getFirstName()
+        );
+        String lastName = inputReader.readNonEmptyStringWithDefault(
+                "Фамилия [" + current.getLastName() + "]: ", current.getLastName()
+        );
+        String phone = inputReader.readNonEmptyStringWithDefault(
+                "Телефон [" + current.getPhone() + "]: ", current.getPhone()
+        );
+        String email = inputReader.readOptionalStringWithDefault(
+                "Email [" + optionalValue(current.getEmail())
+                        + "] (символ - очистит поле): ",
+                current.getEmail()
+        );
+        LocalDate birthDate = inputReader.readDateWithDefault(
+                "Дата рождения", current.getBirthDate()
+        );
 
         clientService.updateClient(id, firstName, lastName, phone, email, birthDate);
         System.out.println("Данные клиента обновлены.");
     }
 
     private void deleteClient() {
-        long id = inputReader.readLong("ID клиента: ");
+        printFormHeader("УДАЛЕНИЕ КЛИЕНТА");
+        long id = inputReader.readCancellableLong("ID клиента: ");
+        Client client = clientService.getClientById(id);
+        printClient(client);
+        boolean confirmed = inputReader.readConfirmation(
+                "Удалить клиента " + client.getFirstName() + " " + client.getLastName()
+                        + "? (да/нет): ",
+                false
+        );
+        if (!confirmed) {
+            System.out.println("Удаление отменено.");
+            return;
+        }
         clientService.deleteClient(id);
         System.out.println("Клиент удалён.");
     }
 
     private void printClientRow(Client client) {
-        System.out.printf("%-5s %-16s %-18s %-18s %-30s %-12s%n",
+        System.out.printf("%-4s %-11s %-13s %-15s %-20s %-10s%n",
                 value(client.getId()),
-                client.getFirstName(),
-                client.getLastName(),
-                client.getPhone(),
-                value(client.getEmail()),
+                shorten(client.getFirstName(), 11),
+                shorten(client.getLastName(), 13),
+                shorten(client.getPhone(), 15),
+                shorten(value(client.getEmail()), 20),
                 value(client.getBirthDate()));
+    }
+
+    private String shorten(String value, int maxLength) {
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength - 3) + "...";
     }
 
     private String value(Object value) {
         return value == null ? "-" : value.toString();
+    }
+
+    private String optionalValue(String value) {
+        return value == null || value.isBlank() ? "не указан" : value;
+    }
+
+    private void printFormHeader(String title) {
+        System.out.println();
+        System.out.println("---------- " + title + " ----------");
+        System.out.println("Для отмены введите 0 или «назад» на любом шаге.");
     }
 
     private void printMenu() {

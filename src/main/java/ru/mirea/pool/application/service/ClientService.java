@@ -8,6 +8,8 @@ import ru.mirea.pool.domain.repository.ClientRepository;
 import ru.mirea.pool.domain.repository.VisitRepository;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -96,6 +98,24 @@ public final class ClientService {
     public List<Client> searchByLastName(String lastName) {
         String normalizedLastName = requireNonEmpty(lastName, "Фамилия для поиска обязательна.");
         return clientRepository.findByLastName(normalizedLastName);
+    }
+
+    public List<Client> searchByLastNameOrPhone(String query) {
+        String normalizedQuery = requireNonEmpty(query, "Строка поиска обязательна.");
+        List<Client> clients = new ArrayList<>(
+                clientRepository.findByLastName(normalizedQuery)
+        );
+
+        clientRepository.findByPhone(normalizedQuery)
+                .filter(found -> clients.stream().noneMatch(
+                        client -> Objects.equals(client.getId(), found.getId())
+                ))
+                .ifPresent(clients::add);
+
+        clients.sort(Comparator
+                .comparing(Client::getLastName, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(Client::getFirstName, String.CASE_INSENSITIVE_ORDER));
+        return clients;
     }
 
     private Client buildValidatedClient(

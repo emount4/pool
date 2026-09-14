@@ -79,6 +79,8 @@ public final class MainMenu {
                     }
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
+            } catch (OperationCancelledException exception) {
+                System.out.println(exception.getMessage());
             } catch (RuntimeException exception) {
                 errorHandler.handle(exception);
             }
@@ -90,26 +92,30 @@ public final class MainMenu {
         while (running) {
             System.out.println();
             System.out.println("========== ПОИСК ==========");
-            System.out.println("1. Посещения по ID клиента");
+            System.out.println("1. Посещения клиента по фамилии или телефону");
             System.out.println("2. Посещения по дате");
-            System.out.println("3. Клиенты по фамилии");
+            System.out.println("3. Клиенты по фамилии или телефону");
             System.out.println("0. Назад");
 
             int choice = inputReader.readIntInRange("Выберите действие: ", 0, 3);
             try {
                 switch (choice) {
-                    case 1 -> visitMenu.printVisits(visitService.searchByClient(
-                            inputReader.readLong("ID клиента: ")
-                    ));
+                    case 1 -> visitMenu.printVisits(
+                            visitService.searchByClient(visitMenu.selectClientId())
+                    );
                     case 2 -> visitMenu.printVisits(visitService.searchByDate(
-                            inputReader.readDate("Дата посещения")
+                            inputReader.readCancellableDate("Дата посещения")
                     ));
-                    case 3 -> clientMenu.printClients(clientService.searchByLastName(
-                            inputReader.readNonEmptyString("Фамилия или её часть: ")
+                    case 3 -> clientMenu.printClients(clientService.searchByLastNameOrPhone(
+                            inputReader.readCancellableNonEmptyString(
+                                    "Фамилия, её часть или полный телефон: "
+                            )
                     ));
                     case 0 -> running = false;
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
+            } catch (OperationCancelledException exception) {
+                System.out.println(exception.getMessage());
             } catch (RuntimeException exception) {
                 errorHandler.handle(exception);
             }
@@ -141,6 +147,8 @@ public final class MainMenu {
                     case 0 -> running = false;
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
+            } catch (OperationCancelledException exception) {
+                System.out.println(exception.getMessage());
             } catch (RuntimeException exception) {
                 errorHandler.handle(exception);
             }
@@ -148,8 +156,8 @@ public final class MainMenu {
     }
 
     private void filterByDateRange() {
-        LocalDate from = inputReader.readDate("Начальная дата");
-        LocalDate to = inputReader.readDate("Конечная дата");
+        LocalDate from = inputReader.readCancellableDate("Начальная дата");
+        LocalDate to = inputReader.readCancellableDate("Конечная дата");
         visitMenu.printVisits(visitService.filterByDateRange(from, to));
     }
 
@@ -159,7 +167,8 @@ public final class MainMenu {
         System.out.println("Всего клиентов: " + statistics.totalClients());
         System.out.println("Всего посещений: " + statistics.totalVisits());
         for (VisitStatus status : VisitStatus.values()) {
-            System.out.printf("%s: %d%n", status, statistics.visitsByStatus().getOrDefault(status, 0L));
+            System.out.printf("%s: %d%n", ConsoleLabels.visitStatus(status),
+                    statistics.visitsByStatus().getOrDefault(status, 0L));
         }
         System.out.println("Посещений сегодня: " + statistics.visitsToday());
         System.out.printf("Средняя продолжительность: %.2f мин.%n",
@@ -173,8 +182,8 @@ public final class MainMenu {
                 "exports",
                 "pool-data-" + LocalDateTime.now().format(EXPORT_TIMESTAMP) + ".xlsx"
         ).toString();
-        String enteredPath = inputReader.readString(
-                "Путь к файлу (Enter — " + defaultPath + "): "
+        String enteredPath = inputReader.readCancellableString(
+                "Путь к файлу (Enter — " + defaultPath + ", 0 — отмена): "
         ).trim();
         Path destination = Path.of(enteredPath.isEmpty() ? defaultPath : enteredPath);
 
@@ -207,6 +216,8 @@ public final class MainMenu {
                     case 0 -> running = false;
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
+            } catch (OperationCancelledException exception) {
+                System.out.println(exception.getMessage());
             } catch (RuntimeException exception) {
                 errorHandler.handle(exception);
             }

@@ -1,6 +1,7 @@
 package ru.mirea.pool.application.service;
 
 import ru.mirea.pool.application.auth.UserSession;
+import ru.mirea.pool.application.dto.VisitSlotDto;
 import ru.mirea.pool.domain.exception.AccessDeniedException;
 import ru.mirea.pool.domain.exception.BusinessRuleException;
 import ru.mirea.pool.domain.exception.EntityNotFoundException;
@@ -11,10 +12,13 @@ import ru.mirea.pool.domain.repository.ClientRepository;
 import ru.mirea.pool.domain.repository.VisitRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 public final class VisitService {
 
@@ -22,6 +26,9 @@ public final class VisitService {
     private static final int MAXIMUM_DURATION_MINUTES = 180;
     private static final int MINIMUM_LANE_NUMBER = 1;
     private static final int MAXIMUM_LANE_NUMBER = 8;
+    private static final int SLOT_STEP_MINUTES = 30;
+    private static final LocalTime OPENING_TIME = LocalTime.of(7, 0);
+    private static final LocalTime CLOSING_TIME = LocalTime.of(22, 0);
 
     private static final Comparator<Visit> DATE_TIME_COMPARATOR = Comparator
             .comparing(Visit::getVisitDate)
@@ -49,10 +56,11 @@ public final class VisitService {
     ) {
         requireAuthenticated(actor);
         validateVisitData(clientId, visitDate, startTime, durationMinutes, laneNumber);
-        if (visitDate.isBefore(LocalDate.now())) {
+        if (LocalDateTime.of(visitDate, startTime).isBefore(LocalDateTime.now())) {
             throw new BusinessRuleException("Новое посещение нельзя создать в прошлом.");
         }
         ensureNoOverlap(clientId, visitDate, startTime, durationMinutes, null);
+        ensureLaneAvailable(visitDate, startTime, durationMinutes, laneNumber, null);
 
         Visit visit = new Visit(
                 null,
@@ -76,6 +84,53 @@ public final class VisitService {
         return visitRepository.findAll();
     }
 
+    public List<VisitSlotDto> getAvailableSlots(
+            long clientId,
+            LocalDate visitDate,
+            int durationMinutes
+    ) {
+        validateClientId(clientId);
+        ensureClientExists(clientId);
+        if (visitDate == null) {
+            throw new ValidationException("Дата посещения обязательна.");
+        }
+        if (visitDate.isBefore(LocalDate.now())) {
+            throw new BusinessRuleException("Нельзя выбрать дату в прошлом.");
+        }
+        validateDuration(durationMinutes);
+
+        List<Visit> visits = visitRepository.findByDate(visitDate).stream()
+                .filter(this::blocksSchedule)
+                .toList();
+        List<VisitSlotDto> slots = new ArrayList<>();
+
+        for (LocalTime start = OPENING_TIME;
+             !start.plusMinutes(durationMinutes).isAfter(CLOSING_TIME);
+             start = start.plusMinutes(SLOT_STEP_MINUTES)) {
+            LocalTime end = start.plusMinutes(durationMinutes);
+            if (visitDate.equals(LocalDate.now())
+                    && !LocalDateTime.of(visitDate, start).isAfter(LocalDateTime.now())) {
+                continue;
+            }
+            if (hasClientOverlap(visits, clientId, start, end, null)) {
+                continue;
+            }
+
+            LocalTime slotStart = start;
+            List<Integer> availableLanes = IntStream.rangeClosed(
+                            MINIMUM_LANE_NUMBER,
+                            MAXIMUM_LANE_NUMBER
+                    )
+                    .filter(lane -> !hasLaneOverlap(visits, lane, slotStart, end, null))
+                    .boxed()
+                    .toList();
+            if (!availableLanes.isEmpty()) {
+                slots.add(new VisitSlotDto(start, end, availableLanes));
+            }
+        }
+        return slots;
+    }
+
     public Visit updateVisit(
             long visitId,
             long clientId,
@@ -88,6 +143,7 @@ public final class VisitService {
         Visit existing = findRequiredVisit(visitId);
         validateVisitData(clientId, visitDate, startTime, durationMinutes, laneNumber);
         ensureNoOverlap(clientId, visitDate, startTime, durationMinutes, visitId);
+        ensureLaneAvailable(visitDate, startTime, durationMinutes, laneNumber, visitId);
 
         existing.setClientId(clientId);
         existing.setVisitDate(visitDate);
@@ -187,10 +243,7 @@ public final class VisitService {
         if (startTime == null) {
             throw new ValidationException("Время начала посещения обязательно.");
         }
-        if (durationMinutes < MINIMUM_DURATION_MINUTES
-                || durationMinutes > MAXIMUM_DURATION_MINUTES) {
-            throw new ValidationException("Продолжительность должна быть от 30 до 180 минут.");
-        }
+        validateDuration(durationMinutes);
         if (laneNumber < MINIMUM_LANE_NUMBER || laneNumber > MAXIMUM_LANE_NUMBER) {
             throw new ValidationException("Номер дорожки должен быть от 1 до 8.");
         }
@@ -204,14 +257,85 @@ public final class VisitService {
             Long excludedVisitId
     ) {
         LocalTime endTime = startTime.plusMinutes(durationMinutes);
-        boolean overlaps = visitRepository.findByClientIdAndDate(clientId, visitDate).stream()
-                .filter(existing -> !Objects.equals(existing.getId(), excludedVisitId))
-                .anyMatch(existing -> startTime.isBefore(existing.getEndTime())
-                        && existing.getStartTime().isBefore(endTime));
+        boolean overlaps = hasClientOverlap(
+                visitRepository.findByClientIdAndDate(clientId, visitDate),
+                clientId,
+                startTime,
+                endTime,
+                excludedVisitId
+        );
 
         if (overlaps) {
             throw new BusinessRuleException(
                     "Посещение пересекается с другим посещением этого клиента."
+            );
+        }
+    }
+
+    private void ensureLaneAvailable(
+            LocalDate visitDate,
+            LocalTime startTime,
+            int durationMinutes,
+            int laneNumber,
+            Long excludedVisitId
+    ) {
+        LocalTime endTime = startTime.plusMinutes(durationMinutes);
+        boolean overlaps = hasLaneOverlap(
+                visitRepository.findByDate(visitDate),
+                laneNumber,
+                startTime,
+                endTime,
+                excludedVisitId
+        );
+        if (overlaps) {
+            throw new BusinessRuleException(
+                    "Дорожка " + laneNumber + " занята в выбранное время."
+            );
+        }
+    }
+
+    private boolean hasClientOverlap(
+            List<Visit> visits,
+            long clientId,
+            LocalTime startTime,
+            LocalTime endTime,
+            Long excludedVisitId
+    ) {
+        return visits.stream()
+                .filter(this::blocksSchedule)
+                .filter(visit -> visit.getClientId() == clientId)
+                .filter(visit -> !Objects.equals(visit.getId(), excludedVisitId))
+                .anyMatch(visit -> overlaps(startTime, endTime, visit));
+    }
+
+    private boolean hasLaneOverlap(
+            List<Visit> visits,
+            int laneNumber,
+            LocalTime startTime,
+            LocalTime endTime,
+            Long excludedVisitId
+    ) {
+        return visits.stream()
+                .filter(this::blocksSchedule)
+                .filter(visit -> visit.getLaneNumber() == laneNumber)
+                .filter(visit -> !Objects.equals(visit.getId(), excludedVisitId))
+                .anyMatch(visit -> overlaps(startTime, endTime, visit));
+    }
+
+    private boolean overlaps(LocalTime startTime, LocalTime endTime, Visit visit) {
+        return startTime.isBefore(visit.getEndTime())
+                && visit.getStartTime().isBefore(endTime);
+    }
+
+    private boolean blocksSchedule(Visit visit) {
+        return visit.getStatus() != VisitStatus.CANCELLED;
+    }
+
+    private void validateDuration(int durationMinutes) {
+        if (durationMinutes < MINIMUM_DURATION_MINUTES
+                || durationMinutes > MAXIMUM_DURATION_MINUTES) {
+            throw new ValidationException(
+                    "Продолжительность посещения должна быть от 30 до 180 минут."
             );
         }
     }
