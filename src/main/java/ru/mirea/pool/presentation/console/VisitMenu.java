@@ -6,7 +6,6 @@ import ru.mirea.pool.application.service.ClientService;
 import ru.mirea.pool.application.service.VisitService;
 import ru.mirea.pool.domain.model.Client;
 import ru.mirea.pool.domain.model.Visit;
-import ru.mirea.pool.domain.model.VisitStatus;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -45,7 +44,7 @@ public final class VisitMenu {
         boolean running = true;
         while (running) {
             printMenu();
-            int choice = inputReader.readIntInRange("Выберите действие: ", 0, 6);
+            int choice = inputReader.readIntInRange("Выберите действие: ", 0, 7);
             try {
                 switch (choice) {
                     case 1 -> createVisit(session);
@@ -53,7 +52,8 @@ public final class VisitMenu {
                     case 3 -> findVisit();
                     case 4 -> updateVisit();
                     case 5 -> deleteVisit();
-                    case 6 -> changeStatus();
+                    case 6 -> cancelVisit();
+                    case 7 -> refreshStatuses();
                     case 0 -> running = false;
                     default -> throw new IllegalStateException("Неизвестный пункт меню.");
                 }
@@ -101,7 +101,7 @@ public final class VisitMenu {
                     duration
             );
             if (availableSlots.isEmpty()) {
-                System.out.println("На выбранную дату нет подходящих свободных интервалов.");
+                System.out.println("На выбранную дату нет подходящих интервалов.");
                 if (inputReader.readConfirmation(
                         "Выбрать другую дату или продолжительность? (да/нет, Enter — да): ",
                         true
@@ -144,17 +144,15 @@ public final class VisitMenu {
 
     private void findVisit() {
         printFormHeader("ПОИСК ПОСЕЩЕНИЯ");
-        long id = inputReader.readCancellableLong("ID посещения: ");
-        printVisit(visitService.getVisitById(id));
+        printVisit(selectVisit());
     }
 
     private void updateVisit() {
         printFormHeader("РЕДАКТИРОВАНИЕ ПОСЕЩЕНИЯ");
-        long id = inputReader.readCancellableLong("ID посещения: ");
-        Visit current = visitService.getVisitById(id);
+        Visit current = selectVisit();
+        long id = current.getId();
         System.out.println("Текущие данные:");
         printVisit(current);
-        System.out.println("Нажмите Enter, чтобы оставить текущее значение.");
 
         long clientId = current.getClientId();
         if (inputReader.readConfirmation(
@@ -162,28 +160,46 @@ public final class VisitMenu {
         )) {
             clientId = selectClientId();
         }
-        LocalDate date = inputReader.readDateWithDefault(
-                "Дата посещения", current.getVisitDate()
-        );
-        LocalTime time = inputReader.readTimeWithDefault(
-                "Время начала", current.getStartTime()
-        );
-        int duration = inputReader.readIntInRangeWithDefault(
-                "Продолжительность (30–180 минут)", 30, 180,
-                current.getDurationMinutes()
-        );
-        int lane = inputReader.readIntInRangeWithDefault(
-                "Номер дорожки (1–8)", 1, 8, current.getLaneNumber()
-        );
+        LocalDate date;
+        int duration;
+        VisitSlotDto slot;
+        while (true) {
+            date = selectVisitDate();
+            duration = selectDuration();
+            List<VisitSlotDto> availableSlots = visitService.getAvailableSlotsForVisit(
+                    id, clientId, date, duration
+            );
+            if (availableSlots.isEmpty()) {
+                System.out.println("На выбранную дату нет подходящих интервалов.");
+                if (inputReader.readConfirmation(
+                        "Выбрать другую дату или продолжительность? (да/нет, Enter — да): ",
+                        true
+                )) {
+                    continue;
+                }
+                System.out.println("Посещение не изменено.");
+                return;
+            }
+            slot = selectSlot(availableSlots);
+            break;
+        }
 
-        visitService.updateVisit(id, clientId, date, time, duration, lane);
+        int lane = selectLane(slot.availableLaneNumbers());
+        System.out.printf("Новые данные: %s %s–%s, %d минут, дорожка %d.%n",
+                date, slot.startTime(), slot.endTime(), duration, lane);
+        if (!inputReader.readConfirmation("Сохранить изменения? (да/нет, Enter — да): ", true)) {
+            System.out.println("Посещение не изменено.");
+            return;
+        }
+
+        visitService.updateVisit(id, clientId, date, slot.startTime(), duration, lane);
         System.out.println("Посещение обновлено.");
     }
 
     private void deleteVisit() {
         printFormHeader("УДАЛЕНИЕ ПОСЕЩЕНИЯ");
-        long id = inputReader.readCancellableLong("ID посещения: ");
-        Visit visit = visitService.getVisitById(id);
+        Visit visit = selectVisit();
+        long id = visit.getId();
         printVisit(visit);
         if (!inputReader.readConfirmation("Удалить это посещение? (да/нет): ", false)) {
             System.out.println("Удаление отменено.");
@@ -193,12 +209,20 @@ public final class VisitMenu {
         System.out.println("Посещение удалено.");
     }
 
-    private void changeStatus() {
-        printFormHeader("ИЗМЕНЕНИЕ СТАТУСА");
-        long id = inputReader.readCancellableLong("ID посещения: ");
-        VisitStatus status = inputReader.readVisitStatus("Новый статус: ");
-        visitService.changeStatus(id, status);
-        System.out.println("Статус посещения изменён: " + ConsoleLabels.visitStatus(status) + ".");
+    private void cancelVisit() {
+        printFormHeader("ОТМЕНА ПОСЕЩЕНИЯ");
+        Visit visit = selectVisit();
+        if (!inputReader.readConfirmation("Отменить это посещение? (да/нет): ", false)) {
+            System.out.println("Отмена не выполнена.");
+            return;
+        }
+        visitService.cancelVisit(visit.getId());
+        System.out.println("Посещение отменено.");
+    }
+
+    private void refreshStatuses() {
+        int updated = visitService.refreshStatuses();
+        System.out.println("Актуализировано посещений: " + updated + ".");
     }
 
     long selectClientId() {
@@ -243,32 +267,53 @@ public final class VisitMenu {
         }
     }
 
+    private Visit selectVisit() {
+        List<Visit> visits = visitService.getAllVisits();
+        if (visits.isEmpty()) {
+            System.out.println("Посещения не найдены.");
+            throw new OperationCancelledException();
+        }
+        printVisits(visits);
+        while (true) {
+            long id = inputReader.readCancellableLong("Введите ID посещения из списка: ");
+            if (visits.stream().anyMatch(visit -> visit.getId() == id)) {
+                return visitService.getVisitById(id);
+            }
+            System.out.println("Выберите ID из показанного списка.");
+        }
+    }
+
     private LocalDate selectVisitDate() {
         LocalDate today = LocalDate.now();
-        System.out.println();
-        System.out.println("Дата посещения:");
-        for (int index = 0; index < 7; index++) {
-            LocalDate date = today.plusDays(index);
-            String suffix = switch (index) {
-                case 0 -> " (сегодня)";
-                case 1 -> " (завтра)";
-                default -> "";
-            };
-            System.out.printf("%d. %s%s%n", index + 1, date.format(DATE_OPTION_FORMAT), suffix);
-        }
-        System.out.println("8. Ввести другую дату");
-
-        int choice = inputReader.readCancellableIntInRange("Выберите дату: ", 1, 8);
-        if (choice <= 7) {
-            return today.plusDays(choice - 1L);
-        }
-
+        int firstDay = 0;
         while (true) {
-            LocalDate date = inputReader.readCancellableDate("Дата посещения");
-            if (!date.isBefore(today)) {
-                return date;
+            System.out.println();
+            System.out.println("Дата посещения:");
+            for (int index = 0; index < 7; index++) {
+                LocalDate date = today.plusDays(firstDay + index);
+                String suffix = switch (firstDay + index) {
+                    case 0 -> " (сегодня)";
+                    case 1 -> " (завтра)";
+                    default -> "";
+                };
+                System.out.printf("%d. %s%s%n", index + 1, date.format(DATE_OPTION_FORMAT), suffix);
             }
-            System.out.println("Нельзя выбрать дату в прошлом.");
+            System.out.println("8. Следующие 7 дней");
+            if (firstDay > 0) {
+                System.out.println("9. Предыдущие 7 дней");
+            }
+
+            int choice = inputReader.readCancellableIntInRange(
+                    "Выберите дату: ", 1, firstDay > 0 ? 9 : 8
+            );
+            if (choice <= 7) {
+                return today.plusDays(firstDay + choice - 1L);
+            }
+            if (choice == 8) {
+                firstDay += 7;
+            } else {
+                firstDay -= 7;
+            }
         }
     }
 
@@ -288,11 +333,11 @@ public final class VisitMenu {
     private VisitSlotDto selectSlot(List<VisitSlotDto> slots) {
         List<VisitSlotDto> periodSlots = selectSlotPeriod(slots);
         System.out.println();
-        System.out.println("Свободное время:");
+        System.out.println("Варианты времени:");
         for (int index = 0; index < periodSlots.size(); index++) {
             VisitSlotDto slot = periodSlots.get(index);
             System.out.printf(
-                    "%2d. %s–%s  свободные дорожки: %s%n",
+                    "%2d. %s–%s  доступные дорожки: %s%n",
                     index + 1,
                     slot.startTime(),
                     slot.endTime(),
@@ -320,9 +365,9 @@ public final class VisitMenu {
         while (true) {
             System.out.println();
             System.out.println("Период посещения:");
-            System.out.printf("1. Утро   07:00–12:00 (свободных вариантов: %d)%n", morning.size());
-            System.out.printf("2. День   12:00–17:00 (свободных вариантов: %d)%n", day.size());
-            System.out.printf("3. Вечер  17:00–22:00 (свободных вариантов: %d)%n", evening.size());
+            System.out.printf("1. Утро   07:00–12:00 (вариантов: %d)%n", morning.size());
+            System.out.printf("2. День   12:00–17:00 (вариантов: %d)%n", day.size());
+            System.out.printf("3. Вечер  17:00–22:00 (вариантов: %d)%n", evening.size());
             int choice = inputReader.readCancellableIntInRange("Выберите период: ", 1, 3);
             List<VisitSlotDto> selected = switch (choice) {
                 case 1 -> morning;
@@ -344,7 +389,7 @@ public final class VisitMenu {
             return lane;
         }
 
-        System.out.println("Свободные дорожки: " + formatLanes(availableLanes));
+        System.out.println("Доступные дорожки: " + formatLanes(availableLanes));
         while (true) {
             int lane = inputReader.readCancellableIntInRange(
                     "Выберите дорожку: ", 1, 8
@@ -352,7 +397,7 @@ public final class VisitMenu {
             if (availableLanes.contains(lane)) {
                 return lane;
             }
-            System.out.println("Эта дорожка занята для выбранного времени.");
+            System.out.println("Выберите дорожку из списка.");
         }
     }
 
@@ -414,7 +459,8 @@ public final class VisitMenu {
         System.out.println("3. Найти посещение по ID");
         System.out.println("4. Изменить посещение");
         System.out.println("5. Удалить посещение");
-        System.out.println("6. Изменить статус посещения");
+        System.out.println("6. Отменить посещение");
+        System.out.println("7. Актуализировать статусы");
         System.out.println("0. Назад");
     }
 }

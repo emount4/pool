@@ -56,9 +56,7 @@ public final class VisitService {
     ) {
         requireAuthenticated(actor);
         validateVisitData(clientId, visitDate, startTime, durationMinutes, laneNumber);
-        if (LocalDateTime.of(visitDate, startTime).isBefore(LocalDateTime.now())) {
-            throw new BusinessRuleException("Новое посещение нельзя создать в прошлом.");
-        }
+        validateFutureSchedule(visitDate, startTime);
         ensureNoOverlap(clientId, visitDate, startTime, durationMinutes, null);
         ensureLaneAvailable(visitDate, startTime, durationMinutes, laneNumber, null);
 
@@ -89,6 +87,28 @@ public final class VisitService {
             LocalDate visitDate,
             int durationMinutes
     ) {
+        return getAvailableSlots(clientId, visitDate, durationMinutes, null, true);
+    }
+
+    public List<VisitSlotDto> getAvailableSlotsForVisit(
+            long visitId,
+            long clientId,
+            LocalDate visitDate,
+            int durationMinutes
+    ) {
+        validateId(visitId);
+        Visit existing = findRequiredVisit(visitId);
+        return getAvailableSlots(clientId, visitDate, durationMinutes, visitId,
+                blocksSchedule(existing));
+    }
+
+    private List<VisitSlotDto> getAvailableSlots(
+            long clientId,
+            LocalDate visitDate,
+            int durationMinutes,
+            Long excludedVisitId,
+            boolean checkAvailability
+    ) {
         validateClientId(clientId);
         ensureClientExists(clientId);
         if (visitDate == null) {
@@ -99,9 +119,12 @@ public final class VisitService {
         }
         validateDuration(durationMinutes);
 
-        List<Visit> visits = visitRepository.findByDate(visitDate).stream()
-                .filter(this::blocksSchedule)
-                .toList();
+        List<Visit> visits = checkAvailability
+                ? visitRepository.findByDate(visitDate).stream()
+                        .filter(this::blocksSchedule)
+                        .filter(visit -> !Objects.equals(visit.getId(), excludedVisitId))
+                        .toList()
+                : List.of();
         List<VisitSlotDto> slots = new ArrayList<>();
 
         for (LocalTime start = OPENING_TIME;
@@ -142,8 +165,11 @@ public final class VisitService {
         validateId(visitId);
         Visit existing = findRequiredVisit(visitId);
         validateVisitData(clientId, visitDate, startTime, durationMinutes, laneNumber);
-        ensureNoOverlap(clientId, visitDate, startTime, durationMinutes, visitId);
-        ensureLaneAvailable(visitDate, startTime, durationMinutes, laneNumber, visitId);
+        validateFutureSchedule(visitDate, startTime);
+        if (blocksSchedule(existing)) {
+            ensureNoOverlap(clientId, visitDate, startTime, durationMinutes, visitId);
+            ensureLaneAvailable(visitDate, startTime, durationMinutes, laneNumber, visitId);
+        }
 
         existing.setClientId(clientId);
         existing.setVisitDate(visitDate);
@@ -160,20 +186,20 @@ public final class VisitService {
         visitRepository.deleteById(visitId);
     }
 
-    public Visit changeStatus(long visitId, VisitStatus newStatus) {
+    public int refreshStatuses() {
+        return visitRepository.refreshStatuses(LocalDateTime.now());
+    }
+
+    public Visit cancelVisit(long visitId) {
         validateId(visitId);
-        if (newStatus == null) {
-            throw new ValidationException("Новый статус посещения обязателен.");
-        }
-
         Visit visit = findRequiredVisit(visitId);
-        if (!isAllowedTransition(visit.getStatus(), newStatus)) {
-            throw new BusinessRuleException(
-                    "Переход статуса " + visit.getStatus() + " -> " + newStatus + " запрещён."
-            );
+        if (visit.getStatus() != VisitStatus.PLANNED
+                || !LocalDateTime.of(visit.getVisitDate(), visit.getStartTime())
+                        .isAfter(LocalDateTime.now())) {
+            throw new BusinessRuleException("Отменить можно только ещё не начавшееся посещение.");
         }
 
-        visit.setStatus(newStatus);
+        visit.setStatus(VisitStatus.CANCELLED);
         visitRepository.update(visit);
         return visit;
     }
@@ -246,6 +272,21 @@ public final class VisitService {
         validateDuration(durationMinutes);
         if (laneNumber < MINIMUM_LANE_NUMBER || laneNumber > MAXIMUM_LANE_NUMBER) {
             throw new ValidationException("Номер дорожки должен быть от 1 до 8.");
+        }
+        if (startTime.getMinute() % SLOT_STEP_MINUTES != 0 || startTime.getSecond() != 0
+                || startTime.getNano() != 0) {
+            throw new ValidationException("Время начала должно быть кратно 30 минутам.");
+        }
+        if (startTime.isBefore(OPENING_TIME)
+                || startTime.toSecondOfDay() + durationMinutes * 60
+                > CLOSING_TIME.toSecondOfDay()) {
+            throw new BusinessRuleException("Посещение должно проходить с 07:00 до 22:00.");
+        }
+    }
+
+    private void validateFutureSchedule(LocalDate visitDate, LocalTime startTime) {
+        if (LocalDateTime.of(visitDate, startTime).isBefore(LocalDateTime.now())) {
+            throw new BusinessRuleException("Посещение нельзя назначить на прошедшее время.");
         }
     }
 
@@ -333,17 +374,12 @@ public final class VisitService {
 
     private void validateDuration(int durationMinutes) {
         if (durationMinutes < MINIMUM_DURATION_MINUTES
-                || durationMinutes > MAXIMUM_DURATION_MINUTES) {
+                || durationMinutes > MAXIMUM_DURATION_MINUTES
+                || durationMinutes % SLOT_STEP_MINUTES != 0) {
             throw new ValidationException(
-                    "Продолжительность посещения должна быть от 30 до 180 минут."
+                    "Продолжительность посещения должна быть от 30 до 180 минут с шагом 30 минут."
             );
         }
-    }
-
-    private boolean isAllowedTransition(VisitStatus current, VisitStatus next) {
-        return (current == VisitStatus.PLANNED
-                && (next == VisitStatus.IN_PROGRESS || next == VisitStatus.CANCELLED))
-                || (current == VisitStatus.IN_PROGRESS && next == VisitStatus.COMPLETED);
     }
 
     private Visit findRequiredVisit(long visitId) {

@@ -4,6 +4,7 @@ import ru.mirea.pool.domain.model.Visit;
 import ru.mirea.pool.domain.model.VisitStatus;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,8 @@ public interface VisitRepository {
     void update(Visit visit);
 
     void deleteById(long id);
+
+    int refreshStatuses(LocalDateTime now);
 
     List<Visit> findByClientId(long clientId);
 

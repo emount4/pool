@@ -82,14 +82,13 @@ public final class AdminMenu {
 
     private void findUser(UserSession session) {
         printFormHeader("ПОИСК ПОЛЬЗОВАТЕЛЯ");
-        long id = inputReader.readCancellableLong("ID пользователя: ");
-        printUsers(List.of(userManagementService.getUserById(session, id)));
+        printUsers(List.of(selectUser(session)));
     }
 
     private void changeUsername(UserSession session) {
         printFormHeader("ИЗМЕНЕНИЕ USERNAME");
-        long id = inputReader.readCancellableLong("ID пользователя: ");
-        SystemUser user = userManagementService.getUserById(session, id);
+        SystemUser user = selectUser(session);
+        long id = user.getId();
         String username = inputReader.readNonEmptyStringWithDefault(
                 "Username [" + user.getUsername() + "]: ", user.getUsername()
         );
@@ -99,8 +98,8 @@ public final class AdminMenu {
 
     private void changeRole(UserSession session) {
         printFormHeader("ИЗМЕНЕНИЕ РОЛИ");
-        long id = inputReader.readCancellableLong("ID пользователя: ");
-        SystemUser user = userManagementService.getUserById(session, id);
+        SystemUser user = selectUser(session);
+        long id = user.getId();
         UserRole role = inputReader.readRoleWithDefault(
                 "Роль [" + user.getRole() + "] (1/ADMIN, 2/OPERATOR): ",
                 user.getRole()
@@ -111,7 +110,7 @@ public final class AdminMenu {
 
     private void changePassword(UserSession session) {
         printFormHeader("ИЗМЕНЕНИЕ ПАРОЛЯ");
-        long id = inputReader.readCancellableLong("ID пользователя: ");
+        long id = selectUser(session).getId();
         char[] password = inputReader.readCancellablePassword("Новый пароль: ");
         try {
             userManagementService.changePassword(session, id, password);
@@ -123,8 +122,8 @@ public final class AdminMenu {
 
     private void deactivateUser(UserSession session) {
         printFormHeader("БЛОКИРОВКА ПОЛЬЗОВАТЕЛЯ");
-        long id = inputReader.readCancellableLong("ID пользователя: ");
-        SystemUser user = userManagementService.getUserById(session, id);
+        SystemUser user = selectUser(session);
+        long id = user.getId();
         if (!inputReader.readConfirmation(
                 "Заблокировать пользователя " + user.getUsername() + "? (да/нет): ", false
         )) {
@@ -137,9 +136,25 @@ public final class AdminMenu {
 
     private void activateUser(UserSession session) {
         printFormHeader("РАЗБЛОКИРОВКА ПОЛЬЗОВАТЕЛЯ");
-        long id = inputReader.readCancellableLong("ID пользователя: ");
+        long id = selectUser(session).getId();
         userManagementService.activateUser(session, id);
         System.out.println("Пользователь разблокирован.");
+    }
+
+    private SystemUser selectUser(UserSession session) {
+        List<SystemUser> users = userManagementService.getAllUsers(session);
+        if (users.isEmpty()) {
+            System.out.println("Системные пользователи не найдены.");
+            throw new OperationCancelledException();
+        }
+        printUsers(users);
+        while (true) {
+            long id = inputReader.readCancellableLong("Введите ID пользователя из списка: ");
+            if (users.stream().anyMatch(user -> user.getId() == id)) {
+                return userManagementService.getUserById(session, id);
+            }
+            System.out.println("Выберите ID из показанного списка.");
+        }
     }
 
     private String value(Object value) {

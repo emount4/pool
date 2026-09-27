@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -112,6 +113,33 @@ public final class JdbcVisitRepository implements VisitRepository {
             statement.executeUpdate();
         } catch (SQLException e) {
             throw databaseError("Не удалось удалить посещение.", e);
+        }
+    }
+
+    @Override
+    public int refreshStatuses(LocalDateTime now) {
+        String completeSql = """
+                UPDATE visits SET status = 'COMPLETED'
+                WHERE status IN ('PLANNED', 'IN_PROGRESS')
+                  AND visit_date + start_time + duration_minutes * INTERVAL '1 minute' <= ?
+                """;
+        String startSql = """
+                UPDATE visits SET status = 'IN_PROGRESS'
+                WHERE status = 'PLANNED'
+                  AND visit_date + start_time <= ?
+                  AND visit_date + start_time + duration_minutes * INTERVAL '1 minute' > ?
+                """;
+
+        try (Connection connection = databaseManager.getConnection();
+             PreparedStatement complete = connection.prepareStatement(completeSql);
+             PreparedStatement start = connection.prepareStatement(startSql)) {
+            complete.setObject(1, now);
+            int completed = complete.executeUpdate();
+            start.setObject(1, now);
+            start.setObject(2, now);
+            return completed + start.executeUpdate();
+        } catch (SQLException e) {
+            throw databaseError("Не удалось актуализировать статусы посещений.", e);
         }
     }
 

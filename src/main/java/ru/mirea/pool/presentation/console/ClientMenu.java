@@ -84,14 +84,13 @@ public final class ClientMenu {
 
     private void findClient() {
         printFormHeader("ПОИСК КЛИЕНТА");
-        long id = inputReader.readCancellableLong("ID клиента: ");
-        printClient(clientService.getClientById(id));
+        printClient(selectClient());
     }
 
     private void updateClient() {
         printFormHeader("РЕДАКТИРОВАНИЕ КЛИЕНТА");
-        long id = inputReader.readCancellableLong("ID клиента: ");
-        Client current = clientService.getClientById(id);
+        Client current = selectClient();
+        long id = current.getId();
         System.out.println("Текущие данные:");
         printClient(current);
         System.out.println("Нажмите Enter, чтобы оставить текущее значение.");
@@ -120,8 +119,8 @@ public final class ClientMenu {
 
     private void deleteClient() {
         printFormHeader("УДАЛЕНИЕ КЛИЕНТА");
-        long id = inputReader.readCancellableLong("ID клиента: ");
-        Client client = clientService.getClientById(id);
+        Client client = selectClient();
+        long id = client.getId();
         printClient(client);
         boolean confirmed = inputReader.readConfirmation(
                 "Удалить клиента " + client.getFirstName() + " " + client.getLastName()
@@ -134,6 +133,22 @@ public final class ClientMenu {
         }
         clientService.deleteClient(id);
         System.out.println("Клиент удалён.");
+    }
+
+    private Client selectClient() {
+        List<Client> clients = clientService.getAllClients();
+        if (clients.isEmpty()) {
+            System.out.println("Клиенты не найдены.");
+            throw new OperationCancelledException();
+        }
+        printClients(clients);
+        while (true) {
+            long id = inputReader.readCancellableLong("Введите ID клиента из списка: ");
+            if (clients.stream().anyMatch(client -> client.getId() == id)) {
+                return clientService.getClientById(id);
+            }
+            System.out.println("Выберите ID из показанного списка.");
+        }
     }
 
     private void printClientRow(Client client) {

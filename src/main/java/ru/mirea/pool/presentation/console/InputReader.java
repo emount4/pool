@@ -3,7 +3,7 @@ package ru.mirea.pool.presentation.console;
 import ru.mirea.pool.domain.model.UserRole;
 import ru.mirea.pool.domain.model.VisitStatus;
 
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
@@ -14,7 +14,10 @@ public final class InputReader {
     private final Scanner scanner;
 
     public InputReader() {
-        this.scanner = new Scanner(System.in, StandardCharsets.UTF_8);
+        Charset inputCharset = Charset.forName(System.getProperty(
+                "stdin.encoding", Charset.defaultCharset().name()
+        ));
+        this.scanner = new Scanner(System.in, inputCharset);
     }
 
     public String readString(String prompt) {
