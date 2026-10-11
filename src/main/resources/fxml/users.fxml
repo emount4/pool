@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.UsersController" spacing="14" styleClass="page">
+<Label text="Пользователи" styleClass="page-title"/><Label text="Управление доступом · доступно только администратору" styleClass="muted"/>
+<FlowPane hgap="10" vgap="10"><Button text="+ Добавить пользователя" onAction="#add" styleClass="primary"/><Button fx:id="editButton" text="Изменить доступ / пароль" onAction="#edit"/><Button text="Обновить" onAction="#refresh"/><Button text="Экспорт…" onAction="#export"/></FlowPane>
+<TextField fx:id="searchField" promptText="Поиск по логину или роли" maxWidth="440"/>
+<TableView fx:id="table" VBox.vgrow="ALWAYS"><placeholder><Label text="Нет записей. Добавьте запись или измените фильтры." styleClass="muted"/></placeholder></TableView>
+<Label text="Чтобы закрыть доступ, снимите флажок «Активен» в карточке пользователя. История посещений сохранится." styleClass="muted" wrapText="true"/>
+</VBox>

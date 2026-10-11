@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.LoginController" fx:id="root" alignment="CENTER" spacing="18" styleClass="login-root">
+<Label text="≈" styleClass="login-symbol"/><Label text="БАССЕЙН" styleClass="brand"/>
+<Label text="Клиенты. Расписание. Всё под контролем." styleClass="muted"/>
+<VBox spacing="10" maxWidth="430" styleClass="login-card">
+<Label text="Вход в систему" styleClass="page-title"/><Label text="Логин" styleClass="field-label"/>
+<TextField fx:id="usernameField" promptText="Ваш логин" onAction="#login"/>
+<Label text="Пароль" styleClass="field-label"/>
+<HBox spacing="8" alignment="CENTER_LEFT">
+<StackPane HBox.hgrow="ALWAYS">
+<PasswordField fx:id="passwordField" promptText="Ваш пароль" onAction="#login"/>
+<TextField fx:id="visiblePasswordField" promptText="Ваш пароль" onAction="#login" visible="false" managed="false"/>
+</StackPane>
+<ToggleButton fx:id="passwordToggle" text="Показать" minWidth="90" accessibleText="Показать или скрыть пароль"/>
+</HBox>
+<VBox fx:id="confirmation" spacing="8" visible="false" managed="false"><Label text="Повторите пароль" styleClass="field-label"/>
+<StackPane>
+<PasswordField fx:id="confirmField" promptText="Не менее 8 символов: буквы и цифры" onAction="#login"/>
+<TextField fx:id="visibleConfirmField" promptText="Не менее 8 символов: буквы и цифры" onAction="#login" visible="false" managed="false"/>
+</StackPane></VBox>
+<Label fx:id="statusLabel" text="Подключение…" wrapText="true" minHeight="52" styleClass="login-status"/>
+<Button fx:id="loginButton" text="Войти" onAction="#login" maxWidth="Infinity" styleClass="primary" defaultButton="true"/>
+<Button text="Повторить подключение" onAction="#checkConnection" maxWidth="Infinity" styleClass="quiet"/>
+</VBox><Label text="Система управления бассейном · 2.0" styleClass="muted"/>
+</VBox>

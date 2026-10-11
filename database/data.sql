@@ -39,24 +39,24 @@ INSERT INTO visits (
 VALUES
     (1, 1, CURRENT_DATE - 30, TIME '10:00', 60, 1, 'COMPLETED', 1),
     (2, 2, CURRENT_DATE - 25, TIME '12:00', 90, 2, 'COMPLETED', 2),
-    (3, 3, CURRENT_DATE - 20, TIME '09:00', 45, 3, 'CANCELLED', 1),
+    (3, 3, CURRENT_DATE - 20, TIME '09:00', 60, 3, 'CANCELLED', 1),
     (4, 4, CURRENT_DATE - 15, TIME '18:00', 60, 4, 'COMPLETED', 2),
     (5, 5, CURRENT_DATE - 10, TIME '07:30', 120, 5, 'COMPLETED', 1),
     (6, 6, CURRENT_DATE - 7, TIME '16:00', 30, 6, 'CANCELLED', 2),
     (7, 7, CURRENT_DATE - 3, TIME '11:00', 90, 7, 'COMPLETED', 1),
     (8, 8, CURRENT_DATE - 1, TIME '14:00', 60, 8, 'COMPLETED', 2),
     (9, 1, CURRENT_DATE, TIME '08:00', 60, 1, 'IN_PROGRESS', 1),
-    (10, 2, CURRENT_DATE, TIME '10:00', 45, 2, 'PLANNED', 2),
+    (10, 2, CURRENT_DATE, TIME '10:00', 60, 2, 'PLANNED', 2),
     (11, 3, CURRENT_DATE + 1, TIME '09:00', 60, 3, 'PLANNED', 1),
     (12, 4, CURRENT_DATE + 1, TIME '11:00', 90, 4, 'PLANNED', 2),
     (13, 5, CURRENT_DATE + 2, TIME '13:00', 120, 5, 'PLANNED', 1),
     (14, 6, CURRENT_DATE + 3, TIME '15:00', 30, 6, 'PLANNED', 2),
-    (15, 7, CURRENT_DATE + 4, TIME '17:00', 45, 7, 'PLANNED', 1),
+    (15, 7, CURRENT_DATE + 4, TIME '17:00', 60, 7, 'PLANNED', 1),
     (16, 8, CURRENT_DATE + 5, TIME '19:00', 60, 8, 'PLANNED', 2),
     (17, 1, CURRENT_DATE + 6, TIME '07:00', 90, 2, 'PLANNED', 1),
     (18, 2, CURRENT_DATE + 7, TIME '08:30', 120, 3, 'PLANNED', 2),
     (19, 3, CURRENT_DATE + 8, TIME '12:30', 60, 4, 'PLANNED', 1),
-    (20, 4, CURRENT_DATE + 9, TIME '16:30', 45, 5, 'PLANNED', 2);
+    (20, 4, CURRENT_DATE + 9, TIME '16:30', 60, 5, 'PLANNED', 2);
 
 SELECT setval('system_users_id_seq', (SELECT max(id) FROM system_users), true);
 SELECT setval('clients_id_seq', (SELECT max(id) FROM clients), true);

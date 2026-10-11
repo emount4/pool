@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public final class VisitMenu {
 
     private static final DateTimeFormatter DATE_OPTION_FORMAT =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy, EEEE", new Locale("ru"));
+            DateTimeFormatter.ofPattern("dd.MM.yyyy, EEEE", Locale.of("ru"));
     private static final LocalTime MORNING_END = LocalTime.of(12, 0);
     private static final LocalTime DAY_END = LocalTime.of(17, 0);
 

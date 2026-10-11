@@ -129,6 +129,14 @@ public final class ClientService {
         String normalizedFirstName = validateName(firstName, "Имя");
         String normalizedLastName = validateName(lastName, "Фамилия");
         String normalizedPhone = requireNonEmpty(phone, "Телефон обязателен.");
+        if (normalizedPhone.length() > 30 || !normalizedPhone.matches("\\+?[0-9() \\-]{7,30}")
+                || normalizedPhone.replaceAll("\\D", "").length() < 7) {
+            throw new ValidationException("Телефон: 7–15 цифр, допустимы +, пробелы, скобки и дефисы.");
+        }
+        normalizedPhone = normalizedPhone.replaceAll("[() \\-]", "");
+        if (normalizedPhone.replace("+", "").length() > 15) {
+            throw new ValidationException("Телефон не должен содержать больше 15 цифр.");
+        }
         String normalizedEmail = normalizeEmail(email);
         validateBirthDate(birthDate);
 
@@ -144,8 +152,8 @@ public final class ClientService {
 
     private String validateName(String value, String fieldName) {
         String normalized = requireNonEmpty(value, fieldName + " обязательно.");
-        if (normalized.length() < 2) {
-            throw new ValidationException(fieldName + " должно содержать минимум 2 символа.");
+        if (normalized.length() < 2 || normalized.length() > 100) {
+            throw new ValidationException(fieldName + " должно содержать от 2 до 100 символов.");
         }
         return normalized;
     }
@@ -155,8 +163,8 @@ public final class ClientService {
             return null;
         }
 
-        String normalized = email.trim();
-        if (!EMAIL_PATTERN.matcher(normalized).matches()) {
+        String normalized = email.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized.length() > 255 || !EMAIL_PATTERN.matcher(normalized).matches()) {
             throw new ValidationException("Некорректный формат email.");
         }
         return normalized;
@@ -168,6 +176,9 @@ public final class ClientService {
         }
         if (birthDate.isAfter(LocalDate.now())) {
             throw new ValidationException("Дата рождения не может быть в будущем.");
+        }
+        if (birthDate.isBefore(LocalDate.now().minusYears(120))) {
+            throw new ValidationException("Возраст клиента не может превышать 120 лет.");
         }
     }
 

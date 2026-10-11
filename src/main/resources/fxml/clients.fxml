@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.ClientsController" spacing="12" styleClass="page">
+<Label text="Клиенты" styleClass="page-title"/><Label text="Контакты и история посещений ваших клиентов" styleClass="muted"/>
+<FlowPane hgap="8" vgap="8"><Button text="+ Добавить клиента" onAction="#add" styleClass="primary"/><Button fx:id="editButton" text="Изменить" onAction="#edit"/><Button fx:id="historyButton" text="Посещения клиента" onAction="#history"/><Button fx:id="deleteButton" text="Удалить" onAction="#delete" styleClass="danger"/><Button text="Обновить" onAction="#refresh"/><Button text="Экспорт…" onAction="#export"/></FlowPane>
+<FlowPane hgap="10" vgap="10" styleClass="filter-box"><TextField fx:id="searchField" promptText="Имя, фамилия, телефон или email" prefWidth="320"/><ComboBox fx:id="ageFilter" prefWidth="185"/><ComboBox fx:id="emailFilter" prefWidth="165"/><Button text="Сбросить" onAction="#reset" styleClass="quiet"/></FlowPane>
+<Label fx:id="countLabel" styleClass="muted"/><TableView fx:id="table" VBox.vgrow="ALWAYS"><placeholder><Label text="Нет записей. Добавьте запись или измените фильтры." styleClass="muted"/></placeholder></TableView>
+<Label text="Нажмите на заголовок столбца для сортировки. Shift + щелчок — сортировка по нескольким полям." styleClass="muted" wrapText="true"/>
+</VBox>

@@ -26,13 +26,24 @@ desktop.ini
 # Generated exports
 exports/*.xlsx
 exports/*.xls
+exports/*.csv
 
-# Local environment overrides
+# Local configuration
 *.local.properties
 application-local.properties
+/database.properties
+.env
+.env.*
+!.env.example
 
 # Temporary files
 *.tmp
 *.temp
 *.bak
 *.swp
+*.orig
+*.rej
+
+# Desktop distribution
+/app/
+/pool-desktop*.zip

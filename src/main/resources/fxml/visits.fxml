@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.VisitsController" spacing="10" styleClass="page">
+<Label text="Посещения" styleClass="page-title"/><Label text="Расписание бассейна · 8 дорожек · ежедневно 07:00–22:00" styleClass="muted"/>
+<FlowPane hgap="8" vgap="8"><Button text="+ Записать на посещение" onAction="#add" styleClass="primary"/><Button fx:id="editButton" text="Изменить" onAction="#edit"/><Button fx:id="cancelButton" text="Отменить посещение" onAction="#cancelVisit"/><Button fx:id="deleteButton" text="Удалить" onAction="#delete" styleClass="danger"/><Button text="Обновить и актуализировать" onAction="#refresh"/><Button text="Экспорт…" onAction="#export"/></FlowPane>
+<VBox spacing="10" styleClass="filter-box"><FlowPane hgap="10" vgap="10"><TextField fx:id="searchField" promptText="Клиент, телефон или email" prefWidth="305"/><ComboBox fx:id="statusFilter" promptText="Все статусы" prefWidth="185"/><ComboBox fx:id="laneFilter" promptText="Все дорожки" prefWidth="160"/></FlowPane>
+<FlowPane hgap="10" vgap="8"><Label text="Период:"/><DatePicker fx:id="fromPicker" prefWidth="160"/><Label text="—"/><DatePicker fx:id="toPicker" prefWidth="160"/><Button text="Применить даты" onAction="#applyPeriod"/><Button text="Сбросить все фильтры" onAction="#reset" styleClass="quiet"/></FlowPane>
+<Label fx:id="filterError" styleClass="error" wrapText="true"/></VBox>
+<HBox spacing="16"><Label fx:id="countLabel" styleClass="muted"/><Label fx:id="clientLabel" styleClass="accent-text"/></HBox>
+<TableView fx:id="table" VBox.vgrow="ALWAYS"><placeholder><Label text="Нет записей. Добавьте запись или измените фильтры." styleClass="muted"/></placeholder></TableView>
+<Label fx:id="detailsLabel" text="Выберите посещение, чтобы увидеть данные клиента." wrapText="true" styleClass="detail-line"/>
+<Label text="Изменение и отмена доступны до начала сеанса. Для сортировки нажмите на заголовок столбца; Shift — несколько полей." styleClass="muted" wrapText="true"/>
+</VBox>

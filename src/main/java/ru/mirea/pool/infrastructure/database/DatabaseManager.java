@@ -8,14 +8,18 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 
 public final class DatabaseManager {
 
-    private static final String CONFIGURATION_FILE = "application.properties";
+    private static final String CONFIGURATION_FILE = "database.properties";
 
     private final String url;
     private final String username;
     private final String password;
+    private final String schema;
 
     public DatabaseManager() {
         this(loadProperties());
@@ -25,11 +29,23 @@ public final class DatabaseManager {
         this.url = requiredValue(properties, "db.url", "DB_URL");
         this.username = requiredValue(properties, "db.username", "DB_USERNAME");
         this.password = requiredValue(properties, "db.password", "DB_PASSWORD");
+        this.schema = properties.getProperty("db.schema", "").trim();
     }
 
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(url, username, password);
+            Properties connectionProperties = new Properties();
+            connectionProperties.setProperty("user", username);
+            connectionProperties.setProperty("password", password);
+            connectionProperties.setProperty("connectTimeout", "5");
+            connectionProperties.setProperty("socketTimeout", "20");
+            connectionProperties.setProperty("ApplicationName", "Pool Desktop");
+            Connection connection = DriverManager.getConnection(url, connectionProperties);
+            if (!schema.isBlank()) {
+                try { connection.setSchema(schema); }
+                catch (SQLException e) { connection.close(); throw e; }
+            }
+            return connection;
         } catch (SQLException e) {
             throw new DatabaseException("Не удалось подключиться к базе данных.", e);
         }
@@ -45,7 +61,15 @@ public final class DatabaseManager {
                         "Файл настроек " + CONFIGURATION_FILE + " не найден."
                 );
             }
-            properties.load(input);
+            properties.load(new java.io.InputStreamReader(input, StandardCharsets.UTF_8));
+            Path external = Path.of(System.getProperty("pool.config", CONFIGURATION_FILE));
+            if (Files.exists(external)) {
+                try (var reader = Files.newBufferedReader(external, StandardCharsets.UTF_8)) {
+                    properties.load(reader);
+                }
+            } else if (System.getProperty("pool.config") != null) {
+                throw new DatabaseException("Указанный файл настроек не найден: " + external);
+            }
             return properties;
         } catch (IOException e) {
             throw new DatabaseException("Не удалось прочитать настройки базы данных.", e);

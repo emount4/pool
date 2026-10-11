@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.UserFormController" fx:id="root" spacing="10" styleClass="form" prefHeight="670">
+<Label text="Доступ к системе" styleClass="page-title"/>
+<Label text="Логин *" styleClass="field-label"/><TextField fx:id="usernameField" promptText="От 3 до 50 символов"/>
+<Label text="Роль *" styleClass="field-label"/><ComboBox fx:id="roleBox" maxWidth="Infinity"/>
+<CheckBox fx:id="activeBox" text="Активен"/>
+<Label fx:id="passwordHint" text="Пароль: не менее 8 символов, буквы и цифры" styleClass="muted" wrapText="true"/>
+<Label text="Пароль" styleClass="field-label"/><PasswordField fx:id="passwordField"/>
+<Label text="Повторите пароль" styleClass="field-label"/><PasswordField fx:id="confirmField"/>
+<Label fx:id="errorLabel" wrapText="true" minHeight="44" styleClass="error"/>
+<Region VBox.vgrow="ALWAYS"/><HBox spacing="10" alignment="CENTER_RIGHT"><Button text="Отмена" onAction="#cancel" cancelButton="true"/><Button fx:id="saveButton" text="Сохранить" onAction="#submit" defaultButton="true" styleClass="primary"/></HBox></VBox>

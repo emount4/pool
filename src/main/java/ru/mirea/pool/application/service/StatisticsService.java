@@ -26,7 +26,10 @@ public final class StatisticsService {
     }
 
     public StatisticsDto getStatistics() {
-        List<Visit> visits = visitRepository.findAll();
+        return calculate(clientRepository.findAll().size(), visitRepository.findAll());
+    }
+
+    public StatisticsDto calculate(long totalClients, List<Visit> visits) {
         Map<VisitStatus, Long> statusCounts = countByStatus(visits);
 
         long visitsToday = visits.stream()
@@ -51,7 +54,7 @@ public final class StatisticsService {
                 .orElse(null);
 
         return new StatisticsDto(
-                clientRepository.findAll().size(),
+                totalClients,
                 visits.size(),
                 statusCounts,
                 visitsToday,

@@ -106,12 +106,12 @@ public final class JdbcClientRepository implements ClientRepository {
 
     @Override
     public Optional<Client> findByPhone(String phone) {
-        return findOne("SELECT " + SELECT_COLUMNS + " FROM clients WHERE phone = ?", phone);
+        return findOne("SELECT " + SELECT_COLUMNS + " FROM clients WHERE regexp_replace(phone, '[() -]', '', 'g') = ?", phone);
     }
 
     @Override
     public Optional<Client> findByEmail(String email) {
-        return findOne("SELECT " + SELECT_COLUMNS + " FROM clients WHERE email = ?", email);
+        return findOne("SELECT " + SELECT_COLUMNS + " FROM clients WHERE lower(email) = lower(?)", email);
     }
 
     @Override

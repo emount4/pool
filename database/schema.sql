@@ -1,6 +1,4 @@
-DROP TABLE IF EXISTS visits;
-DROP TABLE IF EXISTS clients;
-DROP TABLE IF EXISTS system_users;
+-- Initialisation for an EMPTY database only. Never deletes existing KR1 data.
 
 CREATE TABLE system_users (
     id BIGSERIAL PRIMARY KEY,

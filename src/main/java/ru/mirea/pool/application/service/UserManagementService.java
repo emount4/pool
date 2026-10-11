@@ -82,6 +82,32 @@ public final class UserManagementService {
         userRepository.update(target);
     }
 
+    /** Validate every field before a single UPDATE, so an edit is atomic. */
+    public void updateUser(UserSession actor, long id, String username, UserRole role, boolean active, char[] password) {
+        requireAdmin(actor);
+        validateUserId(id);
+        String normalized = validateAndNormalizeUsername(username);
+        validateRole(role);
+        SystemUser target = findRequiredUser(id);
+        if (!target.getUsername().equals(normalized) && userRepository.existsByUsername(normalized)) {
+            throw new BusinessRuleException("Этот логин уже используется.");
+        }
+        if (isSameUser(actor, target) && (!active || role != UserRole.ADMIN)) {
+            throw new BusinessRuleException("Нельзя заблокировать себя или снять с себя роль администратора.");
+        }
+        if (target.isActive() && target.getRole() == UserRole.ADMIN && (!active || role != UserRole.ADMIN)) {
+            ensureAnotherActiveAdminExists();
+        }
+        if (password != null && password.length > 0) {
+            passwordPolicy.validate(password);
+            target.setPasswordHash(passwordHasher.hash(password));
+        }
+        target.setUsername(normalized);
+        target.setRole(role);
+        target.setActive(active);
+        userRepository.update(target);
+    }
+
     public void changeRole(
             UserSession actor,
             long targetUserId,

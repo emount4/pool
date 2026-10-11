@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.ClientFormController" fx:id="root" spacing="8" styleClass="form" prefHeight="660">
+<Label text="Карточка клиента" styleClass="page-title"/><Label text="Поля со звёздочкой обязательны" styleClass="muted"/>
+<Label text="Фамилия *" styleClass="field-label"/><TextField fx:id="lastNameField" promptText="Иванов"/>
+<Label text="Имя *" styleClass="field-label"/><TextField fx:id="firstNameField" promptText="Иван"/>
+<Label text="Телефон *" styleClass="field-label"/><TextField fx:id="phoneField" promptText="+7 999 123-45-67"/>
+<Label text="Email" styleClass="field-label"/><TextField fx:id="emailField" promptText="name@example.com"/>
+<Label text="Дата рождения *" styleClass="field-label"/><DatePicker fx:id="birthDatePicker" maxWidth="Infinity"/>
+<Label fx:id="errorLabel" wrapText="true" minHeight="44" styleClass="error"/>
+<Region VBox.vgrow="ALWAYS"/><HBox spacing="10" alignment="CENTER_RIGHT"><Button text="Отмена" onAction="#cancel" cancelButton="true"/><Button fx:id="saveButton" text="Сохранить" onAction="#submit" defaultButton="true" styleClass="primary"/></HBox></VBox>

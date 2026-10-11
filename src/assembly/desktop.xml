@@ -1,0 +1,19 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+    <id>desktop</id><formats><format>zip</format></formats><includeBaseDirectory>true</includeBaseDirectory><baseDirectory>pool-desktop</baseDirectory>
+    <fileSets>
+        <fileSet><directory>${project.basedir}</directory><outputDirectory>/</outputDirectory>
+            <excludes><exclude>.git/**</exclude><exclude>target/**</exclude><exclude>app/**</exclude><exclude>exports/**</exclude><exclude>*.log</exclude><exclude>.env</exclude><exclude>database.properties</exclude><exclude>*.sh</exclude><exclude>mvnw</exclude></excludes>
+        </fileSet>
+        <fileSet><directory>${project.basedir}</directory><outputDirectory>/</outputDirectory><fileMode>0755</fileMode><includes><include>*.sh</include><include>mvnw</include></includes></fileSet>
+        <fileSet><directory>${project.build.directory}/runtime</directory><outputDirectory>app/lib</outputDirectory><excludes><exclude>javafx-*.jar</exclude></excludes></fileSet>
+        <fileSet><directory>${project.build.directory}/runtime</directory><outputDirectory>app/native/linux</outputDirectory><includes><include>javafx-*-linux.jar</include></includes></fileSet>
+        <fileSet><directory>${project.build.directory}/runtime</directory><outputDirectory>app/native/win</outputDirectory><includes><include>javafx-*-win.jar</include></includes></fileSet>
+        <fileSet><directory>${project.build.directory}/runtime</directory><outputDirectory>app/native/mac</outputDirectory><includes><include>javafx-*-mac.jar</include></includes></fileSet>
+        <fileSet><directory>${project.build.directory}/runtime</directory><outputDirectory>app/native/mac-aarch64</outputDirectory><includes><include>javafx-*-mac-aarch64.jar</include></includes></fileSet>
+    </fileSets>
+    <files>
+        <file><source>${project.build.directory}/${project.build.finalName}.jar</source><outputDirectory>app</outputDirectory><destName>pool-desktop.jar</destName></file>
+        <file><source>src/main/resources/database.properties</source><outputDirectory>/</outputDirectory><destName>database.properties</destName></file>
+        <file><source>.env.example</source><outputDirectory>/</outputDirectory><destName>.env</destName></file>
+    </files>
+</assembly>

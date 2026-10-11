@@ -164,6 +164,7 @@ public final class VisitService {
     ) {
         validateId(visitId);
         Visit existing = findRequiredVisit(visitId);
+        ensureEditable(existing);
         validateVisitData(clientId, visitDate, startTime, durationMinutes, laneNumber);
         validateFutureSchedule(visitDate, startTime);
         if (blocksSchedule(existing)) {
@@ -287,6 +288,13 @@ public final class VisitService {
     private void validateFutureSchedule(LocalDate visitDate, LocalTime startTime) {
         if (LocalDateTime.of(visitDate, startTime).isBefore(LocalDateTime.now())) {
             throw new BusinessRuleException("Посещение нельзя назначить на прошедшее время.");
+        }
+    }
+
+    private void ensureEditable(Visit visit) {
+        if (visit.getStatus() != VisitStatus.PLANNED ||
+                !LocalDateTime.of(visit.getVisitDate(), visit.getStartTime()).isAfter(LocalDateTime.now())) {
+            throw new BusinessRuleException("Редактировать можно только запланированное посещение, которое ещё не началось.");
         }
     }
 

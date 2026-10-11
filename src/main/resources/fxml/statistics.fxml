@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<ScrollPane xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.StatisticsController" fitToWidth="true" hbarPolicy="NEVER" styleClass="statistics-scroll"><content><VBox spacing="16" styleClass="page">
+<Label text="Статистика" styleClass="page-title"/><Label text="Показатели по данным бассейна" styleClass="muted"/>
+<FlowPane hgap="10" vgap="10" styleClass="filter-box"><Label text="Период:"/><DatePicker fx:id="fromPicker" prefWidth="160"/><Label text="—"/><DatePicker fx:id="toPicker" prefWidth="160"/><Button text="Применить" onAction="#applyPeriod"/><Button text="Все даты" onAction="#reset"/><Button text="Обновить" onAction="#reload"/><Button text="Экспорт…" onAction="#export" styleClass="primary"/></FlowPane>
+<Label fx:id="errorLabel" styleClass="error" wrapText="true"/><Label fx:id="periodLabel" styleClass="muted"/>
+<TilePane fx:id="cards" prefColumns="3" hgap="14" vgap="14"/>
+<Label text="Посещения по дорожкам" styleClass="section-title"/><Label text="Без отменённых посещений. Количество клиентов — по всей базе; остальные показатели — за выбранный период. Средняя длительность и популярная дорожка учитывают все статусы." styleClass="muted" wrapText="true"/>
+<BarChart fx:id="laneChart" legendVisible="false" animated="false" prefHeight="290" minHeight="250"><xAxis><CategoryAxis label="Дорожка"/></xAxis><yAxis><NumberAxis label="Посещения" forceZeroInRange="true" minorTickVisible="false" tickUnit="1"/></yAxis></BarChart>
+</VBox></content></ScrollPane>

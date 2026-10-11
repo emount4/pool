@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<VBox xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.VisitFormController" fx:id="root" spacing="8" styleClass="form" prefHeight="710">
+<Label text="Запись на посещение" styleClass="page-title"/><Label text="Время и дорожки проверяются перед сохранением" styleClass="muted"/>
+<Label text="Клиент *" styleClass="field-label"/><ComboBox fx:id="clientBox" maxWidth="Infinity" promptText="Выберите клиента"/>
+<Label text="Дата посещения *" styleClass="field-label"/><DatePicker fx:id="datePicker" maxWidth="Infinity"/>
+<Label text="Длительность *" styleClass="field-label"/><ComboBox fx:id="durationBox" maxWidth="Infinity"/>
+<Button text="Найти свободное время" onAction="#refreshSlots" maxWidth="Infinity"/>
+<Label text="Время *" styleClass="field-label"/><ComboBox fx:id="slotBox" maxWidth="Infinity" promptText="Выберите свободный интервал"/>
+<Label text="Дорожка *" styleClass="field-label"/><ComboBox fx:id="laneBox" maxWidth="Infinity" promptText="Выберите дорожку"/>
+<Label fx:id="slotHint" styleClass="muted" wrapText="true"/>
+<Label fx:id="errorLabel" wrapText="true" minHeight="44" styleClass="error"/>
+<Region VBox.vgrow="ALWAYS"/><HBox spacing="10" alignment="CENTER_RIGHT"><Button text="Отмена" onAction="#cancel" cancelButton="true"/><Button fx:id="saveButton" text="Сохранить" onAction="#submit" defaultButton="true" styleClass="primary"/></HBox></VBox>

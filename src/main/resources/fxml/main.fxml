@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<BorderPane xmlns="http://javafx.com/javafx/21.0.8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.mirea.pool.presentation.fx.controller.MainController" fx:id="root" styleClass="app-root">
+<top><HBox spacing="16" alignment="CENTER_LEFT" styleClass="app-header"><Label text="≈" styleClass="brand-symbol"/><VBox spacing="2"><Label text="БАССЕЙН" styleClass="brand"/><Label text="Управление клиентами и посещениями" styleClass="muted"/></VBox><Region HBox.hgrow="ALWAYS"/><Label fx:id="userLabel"/><Button text="Выйти" onAction="#logout" styleClass="quiet"/></HBox></top>
+<center><TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE" styleClass="main-tabs"><tabs>
+<Tab fx:id="visitsTab" text="Посещения"><content><fx:include fx:id="visits" source="visits.fxml"/></content></Tab>
+<Tab text="Клиенты"><content><fx:include fx:id="clients" source="clients.fxml"/></content></Tab>
+<Tab text="Статистика"><content><fx:include fx:id="statistics" source="statistics.fxml"/></content></Tab>
+<Tab fx:id="usersTab" text="Пользователи"><content><fx:include fx:id="users" source="users.fxml"/></content></Tab>
+</tabs></TabPane></center><bottom><HBox styleClass="status-bar"><Label fx:id="statusLabel" text="Загрузка…"/></HBox></bottom>
+</BorderPane>
