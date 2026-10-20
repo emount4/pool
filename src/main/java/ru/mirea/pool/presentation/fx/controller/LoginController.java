@@ -40,11 +40,13 @@ public final class LoginController {
         }, ready -> {
             context = ready.context(); bootstrap = ready.bootstrap();
             confirmation.setVisible(bootstrap); confirmation.setManaged(bootstrap);
-            loginButton.setDisable(false);
+            setLoginFormDisabled(false);
             loginButton.setText(bootstrap ? "Создать администратора" : "Войти");
             statusLabel.setText(bootstrap ? "База пуста. Создайте первого администратора." : "Введите логин и пароль для входа.");
         }, error -> {
-            context = null; loginButton.setDisable(true);
+            context = null;
+            // Keep the retry action available, but block all controls that require a DB connection.
+            setLoginFormDisabled(true);
             statusLabel.setText(Ui.message(error));
         });
     }
@@ -71,6 +73,15 @@ public final class LoginController {
             passwordToggle.setSelected(false);
             statusLabel.setText(Ui.message(error));
         });
+    }
+    private void setLoginFormDisabled(boolean disabled) {
+        usernameField.setDisable(disabled);
+        passwordField.setDisable(disabled);
+        visiblePasswordField.setDisable(disabled);
+        confirmField.setDisable(disabled);
+        visibleConfirmField.setDisable(disabled);
+        passwordToggle.setDisable(disabled);
+        loginButton.setDisable(disabled);
     }
     private record Ready(AppContext context, boolean bootstrap) { }
 }
