@@ -1,5 +1,11 @@
 # Бассейн — настольное приложение JavaFX
 
+## КР №3 · Веб-приложение и REST API
+
+Продолжение проекта находится в `backend/` и `frontend/`. Запуск, настройки и API описаны в [backend/README.md](backend/README.md). Полный отчёт по требованиям — [docs/KR3_REPORT.md](docs/KR3_REPORT.md).
+
+Из корня проекта запустите `powershell -ExecutionPolicy Bypass -File .\backend\start-compose.ps1`. Веб-интерфейс открывается на порту `POOL_APP_PORT` из `.env` (в текущей локальной конфигурации — `18089`).
+
 Переработка https://github.com/emount4/pool (исходный коммит `a6286ff`).
 Java 21 · JavaFX 21 · FXML/CSS · PostgreSQL · JDBC · Maven.
 

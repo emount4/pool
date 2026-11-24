@@ -1,9 +1,14 @@
 package ru.mirea.pool.domain.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Objects;
 
+@Getter
+@Setter
 public class Visit {
 
     private Long id;
@@ -58,70 +63,6 @@ public class Visit {
         this.durationMinutes = durationMinutes;
         this.laneNumber = laneNumber;
         this.status = status;
-        this.createdByUserId = createdByUserId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(Long clientId) {
-        this.clientId = clientId;
-    }
-
-    public LocalDate getVisitDate() {
-        return visitDate;
-    }
-
-    public void setVisitDate(LocalDate visitDate) {
-        this.visitDate = visitDate;
-    }
-
-    public LocalTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public int getDurationMinutes() {
-        return durationMinutes;
-    }
-
-    public void setDurationMinutes(int durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
-    public int getLaneNumber() {
-        return laneNumber;
-    }
-
-    public void setLaneNumber(int laneNumber) {
-        this.laneNumber = laneNumber;
-    }
-
-    public VisitStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(VisitStatus status) {
-        this.status = status;
-    }
-
-    public Long getCreatedByUserId() {
-        return createdByUserId;
-    }
-
-    public void setCreatedByUserId(Long createdByUserId) {
         this.createdByUserId = createdByUserId;
     }
 

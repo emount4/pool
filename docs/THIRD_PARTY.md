@@ -1,5 +1,9 @@
 # Компоненты сборки
 
+Для КР №3 добавлены Spring Boot и Spring Security, Hibernate, Flyway, springdoc OpenAPI, Apache Commons CSV и их транзитивные зависимости. Координаты приведены в backend/pom.xml.
+
+Веб-клиент использует React, TypeScript, Vite и Manrope. Версии зафиксированы в frontend/package-lock.json. Лицензия шрифта включена в frontend/public/assets/LICENSE.manrope.
+
 Исходный проект: https://github.com/emount4/pool, коммит a6286ff.
 
 Сборка использует OpenJFX 21.0.8, PostgreSQL JDBC 42.7.13, Apache POI 5.5.1,

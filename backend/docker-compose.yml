@@ -1,0 +1,42 @@
+name: pool-kr3
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POOL_DB_NAME:-pool_db}
+      POSTGRES_USER: ${POOL_DB_USER:-pool_app}
+      POSTGRES_PASSWORD: ${POOL_DB_PASSWORD:?Set POOL_DB_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POOL_DB_PORT:-55432}:5432"
+    volumes:
+      - pool_kr3_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POOL_DB_USER:-pool_app} -d ${POOL_DB_NAME:-pool_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POOL_DB_NAME:-pool_db}
+      SPRING_DATASOURCE_USERNAME: ${POOL_DB_USER:-pool_app}
+      SPRING_DATASOURCE_PASSWORD: ${POOL_DB_PASSWORD}
+      POOL_JWT_SECRET_BASE64: ${POOL_JWT_SECRET_BASE64:?Set POOL_JWT_SECRET_BASE64 in .env}
+    ports:
+      - "127.0.0.1:${POOL_APP_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/8080; printf 'GET /actuator/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  pool_kr3_data:

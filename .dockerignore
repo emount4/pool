@@ -10,3 +10,8 @@ exports
 *.log
 *.tmp
 *.bak
+frontend/node_modules
+frontend/dist
+backend/target
+.env
+.env.*
